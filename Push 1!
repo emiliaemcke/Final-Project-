@@ -1,0 +1,33 @@
+Crayon c1 = new Crayon ();
+//PGraphics pg; 
+PImage img; 
+
+void setup () {
+  img = loadImage ("Harold.png");
+  size(1000, 1000);
+  background(255);
+ //pg = createGraphics (100,100);
+} 
+
+void draw () { 
+  if (mousePressed){ 
+    stroke (196,90,236);
+    strokeWeight ( 2) ;
+    line (pmouseX, pmouseY, mouseX, mouseY);
+  }
+  image(img, mouseX,mouseY);
+ // pg.background(255);
+  //pg.line(pmouseX, pmouseY, mouseX, mouseY);
+  
+}
+
+
+class Crayon {  
+ void update () {
+  background (255);
+  fill(196,90,236);
+  rotate(270);
+  rect (mouseX,mouseY, 70,30);
+ } 
+
+ } 
