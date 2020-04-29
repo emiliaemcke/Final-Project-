@@ -1,0 +1,43 @@
+// The different things i want to instruct the user to draw: a bee, a boat, a guitar, a hot air ballon
+// I also then initially want it to be controlled by something simple like the pressing of keeps and then once I have understood that aybe attempt something more complex
+// i started by creating a sort of basis for this to work
+// starting by playing with text a little bit next I need to figure out how to use Pshape and such to draw groups of lines into shapes! 
+PImage mouseIcon; // Mouse image
+boolean playAnimation = false;
+// Illustration
+//PShape shapeGroup;
+//PShape drawingShape;
+//PShape drawShape;
+
+void setup () {
+  size(1000, 800);
+  // Set initial shape mode
+ // shapeGroup = createShape(GROUP);   // save the group of lines as one  (this isn't working yet obviusly cause I havent really figured it out but ill get there !
+ // drawingShape = createShape(GROUP); // save the group of shapes 
+ // drawShape = createShape();         // Line
+  // Load images
+  mouseIcon = loadImage ("Harold.png");
+}
+
+void draw () {
+
+  colorMode(RGB, 255);
+  background(255);  // Draw the background (white)
+
+ // DrawLine();
+
+  // Drawing the text that guides the animation 
+  fill(0);
+  textSize(32);
+
+  if (playAnimation) {
+    textAlign(LEFT, TOP);
+    text("Animating...", 10, 10);
+    textAlign(RIGHT, TOP);
+  } else {
+    textAlign(RIGHT, TOP);
+    text("Change type with key 1-4", width-10, 10); // instructions in the top right corner 
+    text("'R' to clear", width-10, 50); // instructions in the top right corner 
+    text("'Q' undo the drawing", width-10, 90); // instructions in the top right corner 
+  }
+}
