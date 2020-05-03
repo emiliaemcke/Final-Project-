@@ -1,43 +1,292 @@
 // The different things i want to instruct the user to draw: a bee, a boat, a guitar, a hot air ballon
+// so far missing bee 
 // I also then initially want it to be controlled by something simple like the pressing of keeps and then once I have understood that aybe attempt something more complex
 // i started by creating a sort of basis for this to work
 // starting by playing with text a little bit next I need to figure out how to use Pshape and such to draw groups of lines into shapes! 
-PImage mouseIcon; // Mouse image
-boolean playAnimation = false;
+// Mouse image
+PImage mouseIcon; 
+
 // Illustration
-//PShape shapeGroup;
-//PShape drawingShape;
-//PShape drawShape;
+PShape shapeGroup; // store shape inside of Pshape
+PShape drawingShape;
+PShape drawShape;
+int currentMode = 1;
+
+// Animation
+float weightAnimation = 0;
+boolean playAnimation = false;
+PVector objectPosition; // alter the position of the drawing of whatever the user has created 
+
+// Guitar objects
+PImage note;
+ArrayList <Note> listNotes;
+int timer = 0;
 
 void setup () {
-  size(1000, 800);
-  // Set initial shape mode
- // shapeGroup = createShape(GROUP);   // save the group of lines as one  (this isn't working yet obviusly cause I havent really figured it out but ill get there !
- // drawingShape = createShape(GROUP); // save the group of shapes 
- // drawShape = createShape();         // Line
+  size(1000, 1000);
+
   // Load images
-  mouseIcon = loadImage ("Harold.png");
-}
+  mouseIcon = loadImage ("Harold.png"); // for the user 
+  note = loadImage("note.png"); // for the guitar drawing
+  note.resize(0, 100); // make bigger 
+
+  // list of notes
+  listNotes = new ArrayList<Note>();
+
+  // Set initial shape mode
+  shapeGroup = createShape(GROUP);  // First shape group then drawing shape then draw shape -->  save group of shapes  (groups of lines)
+  drawingShape = createShape(GROUP); // To save group of shape (lines)
+  drawShape = createShape();         // Line
+
+  noCursor();  // Don't show the cursor
+  textFont(loadFont("font.vlw"));  // Set the font 
+} 
 
 void draw () {
 
-  colorMode(RGB, 255);
-  background(255);  // Draw the background (white)
-
- // DrawLine();
-
-  // Drawing the text that guides the animation 
+  background(255);  // Draw the background 
+ 
+ // Drawing the text that guides the animation 
   fill(0);
   textSize(32);
-
   if (playAnimation) {
     textAlign(LEFT, TOP);
     text("Animating...", 10, 10);
     textAlign(RIGHT, TOP);
   } else {
     textAlign(RIGHT, TOP);
-    text("Change type with key 1-4", width-10, 10); // instructions in the top right corner 
-    text("'R' to clear", width-10, 50); // instructions in the top right corner 
-    text("'Q' undo the drawing", width-10, 90); // instructions in the top right corner 
+    text("Change instructions with keys 1,2,3,4", width-10, 10); // instructions in the top right corner 
+    text("Press 'R' to clear", width-10, 50); // instructions in the top right corner 
+    text("Press 'Q' to undo the drawing", width-10, 90); // instructions in the top right corner 
+  }
+
+  if (mousePressed && !playAnimation) {  // Create lines for each frame
+
+    drawShape.beginShape();  // Start to draw
+
+    // Set line properties
+    drawShape.noFill();
+    drawShape.stroke(0);
+    drawShape.strokeJoin(ROUND); // sets the style of the joints which connect line segments
+    drawShape.strokeCap(ROUND); 
+    drawShape.strokeWeight((sin((float)weightAnimation/5) + 1.5) * 5);
+
+    // Calculate the movement of the lines to add more of a feeling of movement 
+    PVector previousMouse = new PVector(pmouseX, pmouseY);
+    PVector actualMouse = new PVector(mouseX, mouseY);
+    PVector drawPos = previousMouse.copy();
+    PVector distMouse = PVector.sub(actualMouse, previousMouse);
+    distMouse.div(10);
+
+    // Draw the line
+    drawShape.vertex(pmouseX, pmouseY);  // cooirdinates for first vertex
+    for (int i=0; i<10; i++) {
+      drawShape.vertex(drawPos.x, drawPos.y);  // second vertex
+      drawPos.add(distMouse);                  // move the sevond vertex 
+    }
+    drawShape.vertex(mouseX, mouseY);  // last vertex 
+
+    drawShape.endShape();  // End draw
+    drawingShape.addChild(drawShape); // Found this advice on a processing forum https://forum.processing.org/two/discussion/8811/pshape-group-how-to-remove-child Add the two "child" shapes (lines) to the parent group
+    drawShape = createShape();  // Clear for new lines
+
+    weightAnimation++;  //  different stroke weight
+  }
+
+  pushMatrix();
+
+  if (currentMode == 1) { // to decide which different drawing or animation you are currently in
+    DrawAirBallon(); 
+  } else if (currentMode == 2) { // to decide which different drawing or animation you are currently in
+    DrawBoat();
+  } else if (currentMode == 3) { // to decide which different drawing or animation you are currently in
+    DrawGuitar();
+  }
+
+  // Make lines movement on animation
+  if (playAnimation && shapeGroup.getChildCount()>0) {
+    int i = 0;
+    for (PShape shapePart : shapeGroup.getChildren()) {  // Per each group of lines
+      if (playAnimation && shapePart.getChildCount()>0) {
+        for (PShape shape : shapePart.getChildren()) {  // Per each line
+          shape.beginShape();
+          shape.strokeWeight((sin((float)(i+weightAnimation)/10) + 1.5) * 5);
+          shape.endShape();
+          weightAnimation += 0.005;
+          i++;
+          }
+        }
+      }
+  }
+
+  shape(shapeGroup, 0, 0);    // Show family of shapes
+  shape(drawingShape, 0, 0);  // Show group of actul drawing shapes
+
+  popMatrix();
+
+  // Show mouse icon
+  imageMode(CORNER);
+  image(mouseIcon, mouseX-4, mouseY-14);
+}
+
+void keyPressed() {
+  if (!playAnimation) {
+    if (key == 'r') {  // Delete drawing 
+      shapeGroup = createShape(GROUP); // 
+    } else if (key == 'q') {  // Undo group of lines
+      if (shapeGroup.getChildCount()>0) // Returns the number of children within the PShape.
+        shapeGroup.removeChild(shapeGroup.getChildCount()-1); // if it is bigger than 0, than remove "child" shapes from the parent group to erase the entire drawing. 
+    }
+  }
+
+  if (key == ' ') {
+    if (playAnimation) {  // Reset animation
+      playAnimation = false;
+      weightAnimation = 0;
+    } else {  // Play animation
+      playAnimation = true;
+      objectPosition = new PVector();
+    }
+  }
+
+  // choose which drawing you are currenyly doing 
+  switch(key) { // works like else but better for more than one or the other 
+  case '1': 
+    currentMode = 1; // which mode you are in ( which drawing)
+    break;
+  case '2':
+    currentMode = 2;
+    break;
+  case '3':
+    currentMode = 3;
+    break;
+  }
+}
+
+// Add group of lines to family shape 
+void mouseReleased() {
+  if (!playAnimation) {
+    shapeGroup.addChild(drawingShape);
+    drawingShape = createShape(GROUP);
+  }
+}
+
+/// NEXT PAGE NOT SURE HOW TO DO THISON GIT HUB /// THIS IS THE CODE FOR THE BOAT 
+void DrawBoat() {
+
+  if (!playAnimation) {  // Show the title
+    fill(0);
+    textSize(32);
+    textAlign(LEFT, TOP);
+    text("Draw a boat!", 10, 10);
+  } else {                  // Animate the scene
+    objectPosition.x+=2;
+    translate(width/2, height/2);
+    translate(-width/2, -height/2);
+    translate(objectPosition.x, objectPosition.y);
+
+    if (objectPosition.x>width) {
+      playAnimation = false;
+      objectPosition = new PVector();
+    }
+  }
+}
+
+///// THIS IS THE CODE FOR THE GUITAR
+
+void DrawGuitar() {
+
+  if (!playAnimation) {  // Show the title
+    fill(0);
+    textSize(32);
+    textAlign(LEFT, TOP);
+    text("Draw a Guitar!", 10, 10);
+  } else {                  // Animate the scene
+    translate(width/2, height/2);
+    translate(-width/2, -height/2);
+
+    if (objectPosition.x>width) {
+      playAnimation = false;
+      objectPosition = new PVector();
+    }
+
+    // Each 60 frames, add a new note
+    if (playAnimation) {
+      if (timer % 60 == 0) { // if the reminder is 0 then add a new note
+        listNotes.add(new Note(width/2, height/2));
+      }
+      timer++;
+    }
+  }
+
+  // Per each note
+  for (int i=listNotes.size()-1; i>=0; i--) {
+    Note n = listNotes.get(i);
+
+    if (n.destroy) {  // Destroy if is outside of the screen
+      listNotes.remove(i);  
+      continue;
+    }
+
+    // Update the note
+    n.Move();
+    n.Show();
+  }
+}
+
+class Note {
+
+  PVector pos;   // Position
+  PVector dir;   // Random direction to move
+  PImage img;    // The image of the note
+  boolean destroy; // To know when to get rid of the notes 
+
+  // Constructor
+  Note(int x, int y) {
+    pos = new PVector(x, y);  // Set initial position
+    img = note;               // Set image
+
+    dir = new PVector(random(-1, 2), random(-1, 2));  // Set random direction  
+    dir.normalize();  // Magnitude equal to 1
+    dir.mult(random(2, 4));  // Random speed
+  }
+
+  // Move the note
+  void Move() {
+    pos.add(dir);
+
+ // If the notes movess is out of the screen, destroy the note
+    if (pos.x<0 || pos.x>width || pos.y<0 || pos.y>height) {
+      destroy = true;
+    }
+  }
+
+  // Show the note in the current position
+  void Show() {
+    imageMode(CENTER);
+    image(img, pos.x, pos.y);
+  }
+}
+
+
+/// THIS IS THE CODE FOR THE HOT AIR BALLOON
+
+void DrawAirBallon() {
+
+  if (!playAnimation) {  // Show the title " Draw Hot air-balloon"
+    fill(0);
+    textSize(32);
+    textAlign(LEFT, TOP);
+    text("Draw a hot-air balloon!", 10, 10);
+  } else {                  // Animate the scene
+    objectPosition.y-=2;  
+    translate(width/2, height/2);
+    translate(-width/2, -height/2);
+    translate(objectPosition.x, objectPosition.y);
+
+    if (objectPosition.y<-height) {
+      playAnimation = false;
+      objectPosition = new PVector();
+    }
   }
 }
